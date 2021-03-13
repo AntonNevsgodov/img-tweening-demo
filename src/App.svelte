@@ -9,7 +9,6 @@
   const steps = 50;
 
   const frames = [];
-  const keyColors = [];
 
   $: realRangeVal = +_displayRangeVal;
   $: $tweeningRangeVal = realRangeVal;
@@ -30,25 +29,28 @@
     startAutotweeningTimeout = null;
   }
 
+  const doTweeningStep = () => {
+    if (isOnEdge) {
+      tweenDelta = isOnLowerEdge ? 1 : -1;
+      if (pauseOnEdge) {
+        cleanAutotweening();
+        startAutoTweening();
+      } else {
+        realRangeVal += tweenDelta;
+      }
+      pauseOnEdge = !pauseOnEdge;
+    } else {
+      realRangeVal += tweenDelta;
+    }
+  }
+
   const startAutoTweening = () => {
     if (autotweeningInterval || startAutotweeningTimeout) return;
 
-    startAutotweeningTimeout = setTimeout(() => {
-      autotweeningInterval = setInterval(() => {
-        if (isOnEdge) {
-          tweenDelta = isOnLowerEdge ? 1 : -1;
-          if (pauseOnEdge) {
-            cleanAutotweening();
-            startAutoTweening();
-          } else {
-            realRangeVal += tweenDelta;
-          }
-          pauseOnEdge = !pauseOnEdge;
-        } else {
-          realRangeVal += tweenDelta;
-        }
-      }, 30)
-    }, 2000)
+    startAutotweeningTimeout = setTimeout(
+      () => { autotweeningInterval = setInterval(doTweeningStep, 30) },
+      2000
+    )
   }
 
   const onMouseUp = () => {
@@ -74,12 +76,11 @@
   }
 
 	onMount(async () => {
-    await mapAsync(frames, async (img, idx) => {
+    await mapAsync(frames, async (img) => {
       await new Promise((res) => { img.onload = res; });
       img.onload = null;
     });
 
-    console.log(keyColors);
     startAutoTweening();
 	});
 </script>
